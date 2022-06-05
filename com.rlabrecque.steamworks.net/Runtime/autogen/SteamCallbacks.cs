@@ -2426,12 +2426,25 @@ namespace Steamworks {
 	}
 
 	//-----------------------------------------------------------------------------
-	// callback for BeginAuthSession
+	// callback for BeginAuthSession (Client)
 	//-----------------------------------------------------------------------------
 	[StructLayout(LayoutKind.Sequential, Pack = 4)]
 	[CallbackIdentity(Constants.k_iSteamUserCallbacks + 43)]
 	public struct ValidateAuthTicketResponse_t {
 		public const int k_iCallback = Constants.k_iSteamUserCallbacks + 43;
+		public CSteamID m_SteamID;
+		public EAuthSessionResponse m_eAuthSessionResponse;
+		public CSteamID m_OwnerSteamID; // different from m_SteamID if borrowed
+	}
+
+	//-----------------------------------------------------------------------------
+	// callback for BeginAuthSession (Server)
+	//-----------------------------------------------------------------------------
+	[StructLayout(LayoutKind.Sequential, Pack = 4)]
+	[CallbackIdentity(Constants.k_iSteamGameServerCallbacks + 43)]
+	public struct ValidateAuthTicketGameServerResponse_t
+	{
+		public const int k_iCallback = Constants.k_iSteamGameServerCallbacks + 43;
 		public CSteamID m_SteamID;
 		public EAuthSessionResponse m_eAuthSessionResponse;
 		public CSteamID m_OwnerSteamID; // different from m_SteamID if borrowed
@@ -2462,12 +2475,24 @@ namespace Steamworks {
 	}
 
 	//-----------------------------------------------------------------------------
-	// callback for GetAuthSessionTicket
+	// callback for GetAuthSessionTicket (Client)
 	//-----------------------------------------------------------------------------
 	[StructLayout(LayoutKind.Sequential, Pack = Packsize.value)]
 	[CallbackIdentity(Constants.k_iSteamUserCallbacks + 63)]
 	public struct GetAuthSessionTicketResponse_t {
 		public const int k_iCallback = Constants.k_iSteamUserCallbacks + 63;
+		public HAuthTicket m_hAuthTicket;
+		public EResult m_eResult;
+	}
+
+	//-----------------------------------------------------------------------------
+	// callback for GetAuthSessionTicket (Server)
+	//-----------------------------------------------------------------------------
+	[StructLayout(LayoutKind.Sequential, Pack = Packsize.value)]
+	[CallbackIdentity(Constants.k_iSteamGameServerCallbacks + 63)]
+	public struct GetAuthSessionTicketGameServerResponse_t
+	{
+		public const int k_iCallback = Constants.k_iSteamGameServerCallbacks + 63;
 		public HAuthTicket m_hAuthTicket;
 		public EResult m_eResult;
 	}
