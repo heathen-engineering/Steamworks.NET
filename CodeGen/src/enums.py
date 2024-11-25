@@ -10,6 +10,9 @@ g_FlagEnums = (
     #ISteamHTMLSurface
     "EHTMLKeyModifiers",
 
+    #ISteamInput
+    "EControllerHapticLocation",
+
     #ISteamInventory
     "ESteamItemFlags",
 
@@ -25,6 +28,7 @@ g_FlagEnums = (
     # SteamClientPublic
     "EChatSteamIDInstanceFlags",
     "EMarketNotAllowedReasonFlags",
+    "EBetaBranchFlags",
 )
 
 g_SkippedEnums = {

@@ -16,29 +16,6 @@ using IntPtr = System.IntPtr;
 
 namespace Steamworks {
 	// callbacks
-	//---------------------------------------------------------------------------------
-	// Purpose: Sent when a new app is installed
-	//---------------------------------------------------------------------------------
-	[StructLayout(LayoutKind.Sequential, Pack = Packsize.value)]
-	[CallbackIdentity(Constants.k_iSteamAppListCallbacks + 1)]
-	public struct SteamAppInstalled_t {
-		public const int k_iCallback = Constants.k_iSteamAppListCallbacks + 1;
-		public AppId_t m_nAppID;			// ID of the app that installs
-		public int m_iInstallFolderIndex; // library folder the app is installed
-	}
-
-	//---------------------------------------------------------------------------------
-	// Purpose: Sent when an app is uninstalled
-	//---------------------------------------------------------------------------------
-	[StructLayout(LayoutKind.Sequential, Pack = Packsize.value)]
-	[CallbackIdentity(Constants.k_iSteamAppListCallbacks + 2)]
-	public struct SteamAppUninstalled_t {
-		public const int k_iCallback = Constants.k_iSteamAppListCallbacks + 2;
-		public AppId_t m_nAppID;			// ID of the app that installs
-		public int m_iInstallFolderIndex; // library folder the app was installed
-	}
-
-	// callbacks
 	//-----------------------------------------------------------------------------
 	// Purpose: posted after the user gains ownership of DLC & that DLC is installed
 	//-----------------------------------------------------------------------------
@@ -47,17 +24,6 @@ namespace Steamworks {
 	public struct DlcInstalled_t {
 		public const int k_iCallback = Constants.k_iSteamAppsCallbacks + 5;
 		public AppId_t m_nAppID;		// AppID of the DLC
-	}
-
-	//-----------------------------------------------------------------------------
-	// Purpose: response to RegisterActivationCode()
-	//-----------------------------------------------------------------------------
-	[StructLayout(LayoutKind.Sequential, Pack = Packsize.value)]
-	[CallbackIdentity(Constants.k_iSteamAppsCallbacks + 8)]
-	public struct RegisterActivationCodeResponse_t {
-		public const int k_iCallback = Constants.k_iSteamAppsCallbacks + 8;
-		public ERegisterActivationCodeResult m_eResult;
-		public uint m_unPackageRegistered;						// package that was registered. Only set on success
 	}
 
 	//---------------------------------------------------------------------------------
@@ -141,7 +107,11 @@ namespace Steamworks {
 	[CallbackIdentity(Constants.k_iSteamFriendsCallbacks + 31)]
 	public struct GameOverlayActivated_t {
 		public const int k_iCallback = Constants.k_iSteamFriendsCallbacks + 31;
-		public byte m_bActive;	// true if it's just been activated, false otherwise
+		public byte m_bActive;		// true if it's just been activated, false otherwise
+		[MarshalAs(UnmanagedType.I1)]
+		public bool m_bUserInitiated;	// true if the user asked for the overlay to be activated/deactivated
+		public AppId_t m_nAppID;		// the appID of the game (should always be the current game)
+		public uint m_dwOverlayPID;	// used internally
 	}
 
 	//-----------------------------------------------------------------------------
@@ -380,6 +350,37 @@ namespace Steamworks {
 			get { return InteropHelp.ByteArrayToStringUTF8(rgchURI_); }
 			set { InteropHelp.StringToByteArrayUTF8(value, rgchURI_, 1024); }
 		}
+	}
+
+	//-----------------------------------------------------------------------------
+	// Purpose: A user's equipped profile items have changed
+	//-----------------------------------------------------------------------------
+	[StructLayout(LayoutKind.Sequential, Pack = Packsize.value)]
+	[CallbackIdentity(Constants.k_iSteamFriendsCallbacks + 50)]
+	public struct EquippedProfileItemsChanged_t {
+		public const int k_iCallback = Constants.k_iSteamFriendsCallbacks + 50;
+		public CSteamID m_steamID;
+	}
+
+	//-----------------------------------------------------------------------------
+	// Purpose:
+	//-----------------------------------------------------------------------------
+	[StructLayout(LayoutKind.Sequential, Pack = Packsize.value)]
+	[CallbackIdentity(Constants.k_iSteamFriendsCallbacks + 51)]
+	public struct EquippedProfileItems_t {
+		public const int k_iCallback = Constants.k_iSteamFriendsCallbacks + 51;
+		public EResult m_eResult;
+		public CSteamID m_steamID;
+		[MarshalAs(UnmanagedType.I1)]
+		public bool m_bHasAnimatedAvatar;
+		[MarshalAs(UnmanagedType.I1)]
+		public bool m_bHasAvatarFrame;
+		[MarshalAs(UnmanagedType.I1)]
+		public bool m_bHasProfileModifier;
+		[MarshalAs(UnmanagedType.I1)]
+		public bool m_bHasProfileBackground;
+		[MarshalAs(UnmanagedType.I1)]
+		public bool m_bHasMiniProfileBackground;
 	}
 
 	// callbacks
@@ -969,6 +970,21 @@ namespace Steamworks {
 		public bool m_bUsesSteamInputAPI;	// Does the configuration contain any Analog/Digital actions?
 		[MarshalAs(UnmanagedType.I1)]
 		public bool m_bUsesGamepadAPI;		// Does the configuration contain any Xinput bindings?
+	}
+
+	//-----------------------------------------------------------------------------
+	// Purpose: called when controller gamepad slots change - on Linux/macOS these
+	// slots are shared for all running apps.
+	//-----------------------------------------------------------------------------
+	[StructLayout(LayoutKind.Sequential, Pack = Packsize.value)]
+	[CallbackIdentity(Constants.k_iSteamControllerCallbacks + 4)]
+	public struct SteamInputGamepadSlotChange_t {
+		public const int k_iCallback = Constants.k_iSteamControllerCallbacks + 4;
+		public AppId_t m_unAppID;
+		public InputHandle_t m_ulDeviceHandle;		// Handle for device
+		public ESteamInputType m_eDeviceType;			// Type of device
+		public int m_nOldGamepadSlot;		// Previous GamepadSlot - can be -1 controller doesn't uses gamepad bindings
+		public int m_nNewGamepadSlot;		// New Gamepad Slot - can be -1 controller doesn't uses gamepad bindings
 	}
 
 	// SteamInventoryResultReady_t callbacks are fired whenever asynchronous
@@ -1703,6 +1719,19 @@ namespace Steamworks {
 		public RemotePlaySessionID_t m_unSessionID;
 	}
 
+	[StructLayout(LayoutKind.Sequential, Pack = Packsize.value)]
+	[CallbackIdentity(Constants.k_iSteamRemotePlayCallbacks + 3)]
+	public struct SteamRemotePlayTogetherGuestInvite_t {
+		public const int k_iCallback = Constants.k_iSteamRemotePlayCallbacks + 3;
+		[MarshalAs(UnmanagedType.ByValArray, SizeConst = 1024)]
+		private byte[] m_szConnectURL_;
+		public string m_szConnectURL
+		{
+			get { return InteropHelp.ByteArrayToStringUTF8(m_szConnectURL_); }
+			set { InteropHelp.StringToByteArrayUTF8(value, m_szConnectURL_, 1024); }
+		}
+	}
+
 	// callbacks
 	//-----------------------------------------------------------------------------
 	// Purpose: The result of a call to FileShare()
@@ -2168,6 +2197,8 @@ namespace Steamworks {
 		public const int k_iCallback = Constants.k_iSteamUGCCallbacks + 5;
 		public AppId_t m_unAppID;
 		public PublishedFileId_t m_nPublishedFileId;
+		public UGCHandle_t m_hLegacyContent;
+		public ulong m_unManifestID;
 	}
 
 	//-----------------------------------------------------------------------------
@@ -2349,11 +2380,11 @@ namespace Steamworks {
 
 	// callbacks
 	//-----------------------------------------------------------------------------
-	// Purpose: called when a connections to the Steam back-end has been established
-	//			this means the Steam client now has a working connection to the Steam servers
-	//			usually this will have occurred before the game has launched, and should
+	// Purpose: Called when an authenticated connection to the Steam back-end has been established.
+	//			This means the Steam client now has a working connection to the Steam servers.
+	//			Usually this will have occurred before the game has launched, and should
 	//			only be seen if the user has dropped connection due to a networking issue
-	//			or a Steam server update
+	//			or a Steam server update.
 	//-----------------------------------------------------------------------------
 	[StructLayout(LayoutKind.Sequential, Pack = Packsize.value, Size = 1)]
 	[CallbackIdentity(Constants.k_iSteamUserCallbacks + 1)]
@@ -2572,6 +2603,20 @@ namespace Steamworks {
 		public int m_csecsRemaining;						// playtime remaining until the user hits a regulatory limit
 	}
 
+	//-----------------------------------------------------------------------------
+	// callback for GetTicketForWebApi
+	//-----------------------------------------------------------------------------
+	[StructLayout(LayoutKind.Sequential, Pack = Packsize.value)]
+	[CallbackIdentity(Constants.k_iSteamUserCallbacks + 68)]
+	public struct GetTicketForWebApiResponse_t {
+		public const int k_iCallback = Constants.k_iSteamUserCallbacks + 68;
+		public HAuthTicket m_hAuthTicket;
+		public EResult m_eResult;
+		public int m_cubTicket;
+		[MarshalAs(UnmanagedType.ByValArray, SizeConst = Constants.k_nCubTicketMaxLength)]
+		public byte[] m_rgubTicket;
+	}
+
 	// callbacks
 	//-----------------------------------------------------------------------------
 	// Purpose: called when the latests stats and achievements have been received
@@ -2751,7 +2796,7 @@ namespace Steamworks {
 	}
 
 	//-----------------------------------------------------------------------------
-	// Purpose: Fired when running on a laptop and less than 10 minutes of battery is left, fires then every minute
+	// Purpose: Fired when running on a handheld PC or laptop with less than 10 minutes of battery is left, fires then every minute
 	//-----------------------------------------------------------------------------
 	[StructLayout(LayoutKind.Sequential, Pack = Packsize.value)]
 	[CallbackIdentity(Constants.k_iSteamUtilsCallbacks + 2)]
@@ -2802,6 +2847,7 @@ namespace Steamworks {
 		[MarshalAs(UnmanagedType.I1)]
 		public bool m_bSubmitted;										// true if user entered & accepted text (Call ISteamUtils::GetEnteredGamepadTextInput() for text), false if canceled input
 		public uint m_unSubmittedText;
+		public AppId_t m_unAppID;
 	}
 
 	// k_iSteamUtilsCallbacks + 15 through 35 are taken
@@ -2819,6 +2865,16 @@ namespace Steamworks {
 	[CallbackIdentity(Constants.k_iSteamUtilsCallbacks + 38)]
 	public struct FloatingGamepadTextInputDismissed_t {
 		public const int k_iCallback = Constants.k_iSteamUtilsCallbacks + 38;
+	}
+
+	//-----------------------------------------------------------------------------
+	// The text filtering dictionary has changed
+	//-----------------------------------------------------------------------------
+	[StructLayout(LayoutKind.Sequential, Pack = Packsize.value)]
+	[CallbackIdentity(Constants.k_iSteamUtilsCallbacks + 39)]
+	public struct FilterTextDictionaryChanged_t {
+		public const int k_iCallback = Constants.k_iSteamUtilsCallbacks + 39;
+		public int m_eLanguage;	// One of ELanguage, or k_LegallyRequiredFiltering
 	}
 
 	[StructLayout(LayoutKind.Sequential, Pack = Packsize.value)]

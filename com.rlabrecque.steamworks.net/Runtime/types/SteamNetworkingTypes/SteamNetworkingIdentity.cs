@@ -36,12 +36,44 @@ namespace Steamworks
 		// with new identity types.
 		private int m_cbSize;
 
-		[MarshalAs(UnmanagedType.ByValArray, SizeConst = 32)]
-		private uint[] m_reserved; // Pad structure to leave easy room for future expansion
+		// Note this is written out as such because we want this to be a blittable/unmanaged type.
+		private uint m_reserved0; // Pad structure to leave easy room for future expansion
+		private uint m_reserved1;
+		private uint m_reserved2;
+		private uint m_reserved3;
+		private uint m_reserved4;
+		private uint m_reserved5;
+		private uint m_reserved6;
+		private uint m_reserved7;
+		private uint m_reserved8;
+		private uint m_reserved9;
+		private uint m_reserved10;
+		private uint m_reserved11;
+		private uint m_reserved12;
+		private uint m_reserved13;
+		private uint m_reserved14;
+		private uint m_reserved15;
+		private uint m_reserved16;
+		private uint m_reserved17;
+		private uint m_reserved18;
+		private uint m_reserved19;
+		private uint m_reserved20;
+		private uint m_reserved21;
+		private uint m_reserved22;
+		private uint m_reserved23;
+		private uint m_reserved24;
+		private uint m_reserved25;
+		private uint m_reserved26;
+		private uint m_reserved27;
+		private uint m_reserved28;
+		private uint m_reserved29;
+		private uint m_reserved30;
+		private uint m_reserved31;
 
 		// Max sizes
 		public const int k_cchMaxString = 128; // Max length of the buffer needed to hold any identity, formatted in string format by ToString
 		public const int k_cchMaxGenericString = 32; // Max length of the string for generic string identities.  Including terminating '\0'
+		public const int k_cchMaxXboxPairwiseID = 33; // Including terminating '\0'
 		public const int k_cbMaxGenericBytes = 32;
 
 		//
@@ -74,6 +106,42 @@ namespace Steamworks
 		// Returns 0 if identity is not SteamID
 		public ulong GetSteamID64() {
 			return NativeMethods.SteamAPI_SteamNetworkingIdentity_GetSteamID64(ref this);
+		}
+
+		// Returns false if invalid length
+		public bool SetXboxPairwiseID(string pszString)
+		{
+			using (var pszString2 = new InteropHelp.UTF8StringHandle(pszString)) {
+				return NativeMethods.SteamAPI_SteamNetworkingIdentity_SetXboxPairwiseID(ref this, pszString2);
+			}
+		}
+
+		// Returns nullptr if not Xbox ID
+		public string GetXboxPairwiseID()
+		{
+			return InteropHelp.PtrToStringUTF8(NativeMethods.SteamAPI_SteamNetworkingIdentity_GetXboxPairwiseID(ref this));
+		}
+
+		public void SetPSNID(ulong id)
+		{
+			NativeMethods.SteamAPI_SteamNetworkingIdentity_SetPSNID(ref this, id);
+		}
+
+		// Returns 0 if not PSN
+		public ulong GetPSNID()
+		{
+			return NativeMethods.SteamAPI_SteamNetworkingIdentity_GetPSNID(ref this);
+		}
+
+		public void SetStadiaID(ulong id)
+		{
+			NativeMethods.SteamAPI_SteamNetworkingIdentity_SetStadiaID(ref this, id);
+		}
+
+		// Returns 0 if not Stadia
+		public ulong GetStadiaID()
+		{
+			return NativeMethods.SteamAPI_SteamNetworkingIdentity_GetStadiaID(ref this);
 		}
 
 		// Set to specified IP:port
